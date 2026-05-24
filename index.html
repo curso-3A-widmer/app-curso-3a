@@ -137,7 +137,7 @@
         .close-modal:hover { background: var(--hover); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
 
-        .file-upload { border: 2px dashed var(--border); padding: 1.5rem; text-align: center; border-radius: 8px; cursor: pointer; margin-bottom: 1rem; transition: all 0.2s; }
+        .file-upload { border: 2px dashed var(--border); padding: 1.5rem; text-align: center; border-radius: 8px; cursor: pointer; margin-bottom: 0.5rem; transition: all 0.2s; }
         .file-upload:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
         .file-preview { max-width: 150px; max-height: 150px; margin-top: 0.5rem; border-radius: 8px; box-shadow: var(--shadow); }
 
@@ -341,7 +341,7 @@
     <div id="modal-edit-student" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('modal-edit-student')">&times;</span><h3>Editar Alumno</h3><input type="hidden" id="edit-student-id"><div class="input-group"><label>Apoderado</label><input type="text" id="edit-guard"></div><div class="input-group"><label>Teléfono</label><input type="text" id="edit-phone"></div><button class="btn btn-primary" onclick="saveStudentEdit()">Guardar</button></div></div>
     <div id="modal-add-student" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('modal-add-student')">&times;</span><h3>Agregar Nuevo Alumno</h3><div class="form-row"><div class="input-group"><label>Apellido</label><input type="text" id="add-student-last"></div><div class="input-group"><label>Nombres</label><input type="text" id="add-student-first"></div></div><div class="input-group"><label>Apoderado</label><input type="text" id="add-student-guard"></div><div class="input-group"><label>Teléfono</label><input type="text" id="add-student-phone"></div><button class="btn btn-success" onclick="saveNewStudent()">Agregar Alumno</button></div></div>
     <div id="modal-ingreso" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('modal-ingreso')">&times;</span><h3>Nuevo Ingreso</h3><div class="form-row"><div class="input-group"><label>Tipo</label><select id="ingreso-type" onchange="toggleIngresoFields()"><option value="fijo">Monto Fijo</option><option value="cuota">Monto por Cuota (Alumnos)</option></select></div><div class="input-group"><label>Fecha</label><input type="date" id="ingreso-date"></div></div><div class="input-group"><label>Concepto</label><input type="text" id="ingreso-concept"></div><div id="ingreso-fijo-fields"><div class="input-group"><label>Monto Total ($)</label><input type="number" id="ingreso-amount"></div></div><div id="ingreso-cuota-fields" style="display:none;"><div class="input-group"><label>Monto por Alumno ($)</label><input type="number" id="ingreso-amount-per"></div><div class="input-group"><label>Seleccionar Alumnos</label><div class="checkbox-grid" id="ingreso-students-checks"></div></div></div><button class="btn btn-primary" style="margin-top:1rem;" onclick="saveIngreso()">Guardar</button></div></div>
-    <div id="modal-egreso" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('modal-egreso')">&times;</span><h3>Agregar Gasto</h3><input type="hidden" id="egreso-edit-id"><div class="form-row"><div class="input-group"><label>Fecha</label><input type="date" id="egreso-date"></div><div class="input-group"><label>Monto ($)</label><input type="number" id="egreso-amount"></div></div><div class="input-group"><label>Descripción</label><input type="text" id="egreso-desc"></div><div class="input-group"><label>Comprobante (Foto/Archivo)</label><div class="file-upload" onclick="document.getElementById('egreso-file').click()"><span id="file-label">Clic para subir archivo</span><input type="file" id="egreso-file" style="display:none" accept="image/*,.pdf" onchange="previewFile(this)"><img id="file-preview-img" class="file-preview" style="display:none;"></div></div><button class="btn btn-danger" style="margin-top:1rem;" onclick="saveEgreso()">Guardar Gasto</button></div></div>
+    <div id="modal-egreso" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('modal-egreso')">&times;</span><h3>Agregar Gasto</h3><input type="hidden" id="egreso-edit-id"><div class="form-row"><div class="input-group"><label>Fecha</label><input type="date" id="egreso-date"></div><div class="input-group"><label>Monto ($)</label><input type="number" id="egreso-amount"></div></div><div class="input-group"><label>Descripción</label><input type="text" id="egreso-desc"></div><div class="input-group"><label>Comprobante (Foto/Archivo)</label><div class="file-upload" onclick="document.getElementById('egreso-file').click()"><span id="file-label">Clic para subir archivo</span><input type="file" id="egreso-file" style="display:none" accept="image/*,.pdf" onchange="previewFile(this)"><img id="file-preview-img" class="file-preview" style="display:none;"></div><button type="button" class="btn btn-sm btn-danger" id="btn-remove-img" style="display:none; margin-top:0.5rem;" onclick="removeImage()">🗑️ Quitar imagen</button></div><button class="btn btn-danger" style="margin-top:1rem;" onclick="saveEgreso()">Guardar Gasto</button></div></div>
     <div id="modal-share" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('modal-share')">&times;</span><h3>Compartir Transparencia</h3><p style="margin-bottom:1rem; color:var(--text-light);">Copia este link y compártelo con el curso. Podrán ver la información sin necesidad de contraseña.</p><div class="share-link-box"><input type="text" id="share-link" readonly value="https://app-curso-3a.vercel.app/transparencia"><button class="btn btn-sm btn-primary" onclick="copyShareLink()">Copiar</button></div><button class="btn btn-primary" onclick="closeModal('modal-share')">Cerrar</button></div></div>
 
     <script>
@@ -360,19 +360,29 @@
         const MONTH_NAMES_SHORT = {"03":"Mar","04":"Abr","05":"May","06":"Jun","07":"Jul","08":"Ago","09":"Sep","10":"Oct","11":"Nov","12":"Dic"};
         const ALL_MONTHS = ['03','04','05','06','07','08','09','10','11','12'];
         let appData = { students: [], ingresos: [], cuotas: [], egresos: [], logs: [], config: { cuotaAmount: 10000, cuotaHistory: [], theme: 'light' }, nextStudentId: 42 };
-        let currentUser = null, currentMonth = '05', charts = {};
+        let currentUser = null, currentMonth = '05', charts = {}, currentFileData = null;
 
         async function init() {
             try {
                 const docRef = db.collection('app_data').doc('curso3a');
                 const docSnap = await docRef.get();
-                
-                if (docSnap.exists) { 
+
+                if (docSnap.exists) {
                     appData = docSnap.data();
                 } else {
-                    appData.students = JSON.parse(JSON.stringify(INITIAL_STUDENTS));
-                    initializeAllMonths();
-                    await saveData();
+                    const localData = localStorage.getItem(APP_KEY);
+                    if (localData) {
+                        console.log('🔄 Migrando datos de localStorage a Firebase...');
+                        appData = JSON.parse(localData);
+                        if (!appData.config) appData.config = { cuotaAmount: 10000, cuotaHistory: [], theme: 'light' };
+                        if (!appData.cuotas) initializeAllMonths();
+                        await saveData();
+                        console.log('✅ Migración completada. Datos sincronizados en la nube.');
+                    } else {
+                        appData.students = JSON.parse(JSON.stringify(INITIAL_STUDENTS));
+                        initializeAllMonths();
+                        await saveData();
+                    }
                 }
             } catch (e) {
                 console.error("Error al conectar con Firebase:", e);
@@ -635,12 +645,48 @@
         function openEgresoModal(eid = null) {
             document.getElementById('egreso-edit-id').value = eid || ''; document.getElementById('egreso-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('egreso-amount').value = ''; document.getElementById('egreso-desc').value = ''; document.getElementById('egreso-file').value = '';
-            document.getElementById('file-preview-img').style.display = 'none'; document.getElementById('file-label').textContent = 'Clic para subir archivo'; currentFileData = null;
-            if(eid) { const e = appData.egresos.find(x => x.id === eid); document.getElementById('egreso-date').value = e.date; document.getElementById('egreso-amount').value = e.amount; document.getElementById('egreso-desc').value = e.desc; if(e.file) { currentFileData = e.file; document.getElementById('file-preview-img').src = e.file; document.getElementById('file-preview-img').style.display = 'block'; document.getElementById('file-label').textContent = 'Archivo actual'; } }
+            document.getElementById('file-preview-img').style.display = 'none'; document.getElementById('file-label').textContent = 'Clic para subir archivo'; 
+            document.getElementById('btn-remove-img').style.display = 'none'; currentFileData = null;
+            if(eid) { const e = appData.egresos.find(x => x.id === eid); document.getElementById('egreso-date').value = e.date; document.getElementById('egreso-amount').value = e.amount; document.getElementById('egreso-desc').value = e.desc; if(e.file) { currentFileData = e.file; document.getElementById('file-preview-img').src = e.file; document.getElementById('file-preview-img').style.display = 'block'; document.getElementById('file-label').textContent = 'Archivo actual'; document.getElementById('btn-remove-img').style.display = 'inline-flex'; } }
             document.getElementById('modal-egreso').classList.add('active');
         }
-        let currentFileData = null;
-        function previewFile(inp) { const f = inp.files[0]; if(f) { const r = new FileReader(); r.onload = e => { currentFileData = e.target.result; const img = document.getElementById('file-preview-img'); img.src = currentFileData; img.style.display = 'block'; document.getElementById('file-label').textContent = f.name; }; r.readAsDataURL(f); } }
+        function removeImage() {
+            currentFileData = null;
+            document.getElementById('egreso-file').value = '';
+            document.getElementById('file-preview-img').style.display = 'none';
+            document.getElementById('file-label').textContent = 'Clic para subir archivo';
+            document.getElementById('btn-remove-img').style.display = 'none';
+        }
+        function previewFile(inp) {
+            const f = inp.files[0];
+            if(!f) return;
+            if(f.size > 1024 * 500) {
+                alert('⚠️ La imagen es muy grande. Por favor sube una foto menor a 500KB o reduce la resolución.');
+                inp.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const MAX = 800;
+                    let w = img.width, h = img.height;
+                    if(w > h) { if(w > MAX) { h *= MAX/w; w = MAX; } } else { if(h > MAX) { w *= MAX/h; h = MAX; } }
+                    canvas.width = w; canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
+                    currentFileData = canvas.toDataURL('image/jpeg', 0.7);
+                    const preview = document.getElementById('file-preview-img');
+                    preview.src = currentFileData;
+                    preview.style.display = 'block';
+                    document.getElementById('file-label').textContent = f.name;
+                    document.getElementById('btn-remove-img').style.display = 'inline-flex';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(f);
+        }
         function saveEgreso() {
             const id = document.getElementById('egreso-edit-id').value, d = document.getElementById('egreso-date').value, a = parseFloat(document.getElementById('egreso-amount').value), desc = document.getElementById('egreso-desc').value;
             if(!d || !a || !desc) { alert('Completa todos los campos: fecha, monto y descripción'); return; }
