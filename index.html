@@ -18,6 +18,23 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+    <!-- FIREBASE SDK (Compat para funcionar directo en navegador) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyBBaUJcBSoBlCWDMH2yMIC3QLbKaPRE4Eo",
+        authDomain: "curso-3a-widmer.firebaseapp.com",
+        databaseURL: "https://curso-3a-widmer-default-rtdb.firebaseio.com",
+        projectId: "curso-3a-widmer",
+        storageBucket: "curso-3a-widmer.firebasestorage.app",
+        messagingSenderId: "368400261904",
+        appId: "1:368400261904:web:e62676e250786add69bb95"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+    </script>
+
     <style>
         :root {
             --primary: #6366f1; --primary-dark: #4f46e5; --secondary: #8b5cf6;
@@ -331,7 +348,7 @@
                     <div class="config-section">
                         <div class="config-card"><h4 style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;"><span style="color:var(--warning);">💰</span> Valor Cuota Mensual</h4><div class="form-row"><div class="input-group"><label>Nuevo Valor ($)</label><input type="number" id="config-cuota" placeholder="Ej: 15000"></div><div class="input-group"><label>Vigente Desde</label><select id="config-cuota-month"><option value="03">Marzo 2026</option><option value="04">Abril 2026</option><option value="05">Mayo 2026</option><option value="06">Junio 2026</option><option value="07">Julio 2026</option><option value="08">Agosto 2026</option><option value="09">Septiembre 2026</option><option value="10">Octubre 2026</option><option value="11">Noviembre 2026</option><option value="12">Diciembre 2026</option></select></div></div><button class="btn btn-primary btn-sm" onclick="saveConfig()">Guardar Configuración</button><div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--border);"><h5 style="margin-bottom:0.8rem; font-size:0.9rem; color:var(--text-light);">Historial de valores</h5><div id="config-history"></div></div></div>
                         <div class="config-card"><h4 style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;"><span style="color:#ec4899;">🎨</span> Apariencia</h4><div style="display:flex; justify-content:space-between; align-items:center; padding:1rem 0;"><div><div style="font-weight:600;">Tema oscuro</div><div style="font-size:0.85rem; color:var(--text-light);">Modo nocturno</div></div><div class="toggle-switch" id="theme-toggle" onclick="toggleTheme()"></div></div></div>
-                        <div class="config-card"><h4 style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;"><span style="color:#f97316;">🔥</span> Sincronización</h4><div style="padding:1rem; background:var(--bg); border-radius:8px; display:flex; align-items:center; gap:1rem;"><div style="width:12px; height:12px; background:var(--success); border-radius:50%;"></div><div><div style="font-weight:600;">Conectado localmente</div><div style="font-size:0.85rem; color:var(--text-light);">Los datos se guardan en este dispositivo</div></div></div></div>
+                        <div class="config-card"><h4 style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;"><span style="color:#f97316;">🔥</span> Sincronización</h4><div style="padding:1rem; background:var(--bg); border-radius:8px; display:flex; align-items:center; gap:1rem;"><div style="width:12px; height:12px; background:var(--success); border-radius:50%;"></div><div><div style="font-weight:600;">Conectado a Firebase</div><div style="font-size:0.85rem; color:var(--text-light);">Los datos se sincronizan en la nube</div></div></div></div>
                     </div>
                 </div>
             </div>
@@ -365,13 +382,30 @@
         let appData = { students: [], ingresos: [], cuotas: [], egresos: [], logs: [], config: { cuotaAmount: 10000, cuotaHistory: [], theme: 'light' }, nextStudentId: 42 };
         let currentUser = null, currentMonth = '05', charts = {};
 
-        /* === INICIALIZACIÓN === */
-        function init() {
-            const stored = localStorage.getItem(APP_KEY);
-            if(stored) appData = JSON.parse(stored);
-            else { appData.students = JSON.parse(JSON.stringify(INITIAL_STUDENTS)); initializeAllMonths(); saveData(); }
+        /* === INICIALIZACIÓN CON FIREBASE === */
+        async function init() {
+            try {
+                const docRef = db.collection('app_data').doc('curso3a');
+                const docSnap = await docRef.get();
+                
+                if (docSnap.exists()) {
+                    appData = docSnap.data();
+                } else {
+                    appData.students = JSON.parse(JSON.stringify(INITIAL_STUDENTS));
+                    initializeAllMonths();
+                    await saveData();
+                }
+            } catch (e) {
+                console.error("Error al conectar con Firebase:", e);
+                alert("⚠️ Error de conexión con Firebase. Verifica tu internet o las reglas de Firestore.");
+                return;
+            }
+
             syncCuotaValues();
-            if(appData.config.theme === 'dark') { document.body.setAttribute('data-theme', 'dark'); document.getElementById('theme-toggle').classList.add('active'); }
+            if(appData.config.theme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                document.getElementById('theme-toggle').classList.add('active');
+            }
             const now = new Date(); const m = String(now.getMonth() + 1).padStart(2, '0');
             if(ALL_MONTHS.includes(m)) currentMonth = m;
             checkSession();
@@ -392,7 +426,17 @@
             });
         }
 
-        function saveData() { localStorage.setItem(APP_KEY, JSON.stringify(appData)); renderAll(); }
+        /* === GUARDADO EN FIREBASE === */
+        async function saveData() {
+            try {
+                await db.collection('app_data').doc('curso3a').set(appData);
+                renderAll();
+            } catch (e) {
+                console.error("Error al guardar en Firebase:", e);
+                alert("❌ No se pudo guardar. Revisa tu conexión a internet.");
+            }
+        }
+
         function logActivity(a, d) { appData.logs.unshift({ ts: new Date().toISOString(), user: currentUser, action: a, details: d }); saveData(); }
 
         /* === SESIÓN Y NAVEGACIÓN === */
