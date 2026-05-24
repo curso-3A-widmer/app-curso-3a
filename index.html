@@ -149,7 +149,7 @@
         .toggle-switch.active { background: var(--primary); }
         .toggle-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.3s; }
         .toggle-switch.active::after { transform: translateX(24px); }
-        .btn-view-file { background: var(--info); color: white; padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; }
+        .btn-view-file { background: var(--info); color: white; padding: 0.4rem 0.8rem; border-radius: 6px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; font-weight: 500; }
         .btn-view-file:hover { opacity: 0.9; }
 
         .bank-info { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.6rem 0.8rem; border-radius: var(--radius); margin: 0.6rem 0; }
@@ -350,12 +350,32 @@
         const closeModal = id => document.getElementById(id).classList.remove('active');
         window.onclick = e => { if(e.target.classList.contains('modal')) e.target.classList.remove('active'); }
 
-        // ✅ VALIDADOR SEGURO PARA BASE64 (soluciona visualización de boletas)
+        // ✅ FUNCIONES DE VISTA PREVIA SEGURA
         const safeBase64 = (data) => {
             if (!data) return null;
             const clean = data.replace(/\s/g, '');
             return clean.startsWith('data:') ? clean : `data:image/jpeg;base64,${clean}`;
         };
+
+        function openReceiptPreview(id) {
+            const rec = appData.egresos.find(x => x.id === id);
+            if (!rec || !rec.file) return alert('No hay archivo adjunto.');
+            const clean = safeBase64(rec.file);
+            const win = window.open('', '_blank', 'width=800,height=600');
+            win.document.write(`
+                <!DOCTYPE html>
+                <html><head><title>Comprobante - ${rec.desc}</title>
+                <style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f8fafc;font-family:system-ui;}</style>
+                </head>
+                <body>
+                    <div style="background:white;padding:1rem;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);max-width:95%;max-height:95vh;overflow:auto;">
+                        <img src="${clean}" style="display:block;max-width:100%;height:auto;" alt="Boleta">
+                        <p style="text-align:center;margin-top:0.8rem;color:#64748b;font-size:0.9rem;">${rec.desc} | ${rec.date} | ${formatCLP(rec.amount)}</p>
+                    </div>
+                </body></html>
+            `);
+            win.document.close();
+        }
 
         Chart.register(ChartDataLabels);
         const APP_KEY = 'APP_CURSO_3A_DB_FINAL';
@@ -500,7 +520,6 @@
         function toggleExempt(btn, id) { btn.classList.toggle('active'); const div = btn.closest('.student-check'), cb = div.querySelector('input[type="checkbox"]'); if(btn.classList.contains('active')) { cb.checked = true; cb.disabled = true; div.classList.add('exempt'); div.classList.remove('paid'); } else { cb.checked = false; cb.disabled = false; div.classList.remove('exempt'); } }
         function updateIngresoCheck(cb) { const div = cb.closest('.student-check'); if(cb.checked && !div.querySelector('.exempt-toggle').classList.contains('active')) div.classList.add('paid'); else div.classList.remove('paid'); }
 
-        // ✅ CORRECCIÓN: Eximir excluye correctamente del total
         function saveIngreso() {
             const t = document.getElementById('ingreso-type').value, d = document.getElementById('ingreso-date').value, c = document.getElementById('ingreso-concept').value;
             if(!d || !c) return alert('Completa fecha y concepto'); if(new Date(d).getFullYear() < 2026) return alert('Solo registros desde 2026');
@@ -538,7 +557,7 @@
             const tb = document.getElementById('egresos-table-body');
             if(appData.egresos.length === 0) { tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-light);">No hay gastos registrados</td></tr>'; return; }
             tb.innerHTML = appData.egresos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(e => `
-                <tr><td>${e.date}</td><td>${e.desc}</td><td>${formatCLP(e.amount)}</td><td>${e.file ? `<a href="${safeBase64(e.file)}" target="_blank" class="btn-view-file">Ver Archivo</a>` : '-'}</td><td style="display:flex; gap:0.5rem;"><button class="btn btn-sm btn-primary" onclick="openEgresoModal(${e.id})">Editar</button><button class="btn btn-sm btn-danger" onclick="deleteEgreso(${e.id})">Eliminar</button></td></tr>
+                <tr><td>${e.date}</td><td>${e.desc}</td><td>${formatCLP(e.amount)}</td><td>${e.file ? `<button class="btn-view-file" onclick="openReceiptPreview(${e.id})">📄 Ver Boleta</button>` : '-'}</td><td style="display:flex; gap:0.5rem;"><button class="btn btn-sm btn-primary" onclick="openEgresoModal(${e.id})">Editar</button><button class="btn btn-sm btn-danger" onclick="deleteEgreso(${e.id})">Eliminar</button></td></tr>
             `).join('');
         }
         function openEgresoModal(eid = null) { document.getElementById('egreso-edit-id').value = eid || ''; document.getElementById('egreso-date').value = new Date().toISOString().split('T')[0]; document.getElementById('egreso-amount').value = ''; document.getElementById('egreso-desc').value = ''; document.getElementById('egreso-file').value = ''; document.getElementById('file-preview-img').style.display = 'none'; document.getElementById('file-label').textContent = 'Clic para subir archivo'; document.getElementById('btn-remove-img').style.display = 'none'; currentFileData = null; if(eid) { const e = appData.egresos.find(x => x.id === eid); document.getElementById('egreso-date').value = e.date; document.getElementById('egreso-amount').value = e.amount; document.getElementById('egreso-desc').value = e.desc; if(e.file) { currentFileData = e.file; document.getElementById('file-preview-img').src = safeBase64(e.file); document.getElementById('file-preview-img').style.display = 'block'; document.getElementById('file-label').textContent = 'Archivo actual'; document.getElementById('btn-remove-img').style.display = 'inline-flex'; } } document.getElementById('modal-egreso').classList.add('active'); }
@@ -556,7 +575,7 @@
             const dk = document.body.getAttribute('data-theme') === 'dark';
             createChart('transChartGlobal', { type: 'bar', data: { labels: ['Ingresos Totales','Egresos Totales'], datasets: [{ label: 'Monto', data: [ti,tg], backgroundColor: ['#10b981','#ef4444'], borderRadius: 8, borderSkipped: false }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', offset: 5, color: dk ? '#f1f5f9' : '#1e293b', font: { weight: 'bold', size: 14 }, formatter: v => formatCLP(v) } }, scales: { y: { beginAtZero: true, ticks: { color: dk ? '#94a3b8' : '#64748b', callback: v => '$'+(v/1000)+'k' }, grid: { color: dk ? '#334155' : '#e2e8f0' } }, x: { ticks: { color: dk ? '#94a3b8' : '#64748b' }, grid: { display: false } } } } });
             const me = appData.egresos.filter(e => e.date.startsWith(`2026-${currentMonth}`));
-            document.getElementById('trans-expenses-body').innerHTML = me.map(e => `<tr><td>${e.desc}</td><td><span class="badge badge-pending">Gasto</span></td><td>${formatCLP(e.amount)}</td><td>${e.file ? `<a href="${safeBase64(e.file)}" target="_blank" class="btn-view-file">Ver Boleta</a>` : '-'}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--text-light); padding:1.5rem;">Sin gastos este mes</td></tr>';
+            document.getElementById('trans-expenses-body').innerHTML = me.map(e => `<tr><td>${e.desc}</td><td><span class="badge badge-pending">Gasto</span></td><td>${formatCLP(e.amount)}</td><td>${e.file ? `<button class="btn-view-file" onclick="openReceiptPreview(${e.id})">📄 Ver Boleta</button>` : '-'}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--text-light); padding:1.5rem;">Sin gastos este mes</td></tr>';
         }
 
         function exportToPDF() { Object.values(charts).forEach(c => { if(c && typeof c.render === 'function') c.render(); }); const el = document.getElementById('transparency-content'), ot = document.body.getAttribute('data-theme'); document.body.setAttribute('data-theme', 'light'); el.classList.add('pdf-export'); setTimeout(() => { const opt = { margin: 0.5, filename: `Transparencia_3A_${MONTH_NAMES[currentMonth]}_2026.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 1.5, useCORS: true, logging: false, allowTaint: true }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } }; html2pdf().set(opt).from(el).save().then(() => { el.classList.remove('pdf-export'); if(ot === 'dark') document.body.setAttribute('data-theme', 'dark'); else document.body.removeAttribute('data-theme'); logActivity('EXPORTAR_PDF', `Exportó transparencia ${MONTH_NAMES[currentMonth]} 2026`); }); }, 1000); }
