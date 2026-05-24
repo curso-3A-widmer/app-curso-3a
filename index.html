@@ -567,7 +567,9 @@
         function renderIngresos() {
             const c = document.getElementById('ingresos-list');
             if(appData.ingresos.length === 0) { c.innerHTML = '<p style="text-align:center; color:#64748b; padding:2rem;">No hay ingresos.</p>'; return; }
-            c.innerHTML = appData.ingresos.map(i => {
+            // ✅ ORDENAR: Más recientes primero (ilimitado)
+            const sorted = [...appData.ingresos].sort((a,b) => new Date(b.date) - new Date(a.date));
+            c.innerHTML = sorted.map(i => {
                 const p = i.type === 'cuota' ? (i.students.length / appData.students.length * 100) : 100;
                 return `
                 <div class="card" style="margin-bottom:1rem; border-left:4px solid var(--success);">
@@ -596,7 +598,8 @@
         function saveIngreso() {
             const t = document.getElementById('ingreso-type').value, d = document.getElementById('ingreso-date').value, c = document.getElementById('ingreso-concept').value;
             if(!d || !c) return alert('Completa fecha y concepto'); if(new Date(d).getFullYear() < 2026) return alert('Solo registros desde 2026');
-            let r = { id: Date.now(), type: t, date: d, concept: c, students: [] };
+            // ✅ ID ÚNICO GARANTIZADO (evita sobreescribir)
+            let r = { id: 'ing_' + Date.now() + '_' + Math.floor(Math.random() * 10000), type: t, date: d, concept: c, students: [] };
             if(t === 'fijo') { const a = parseFloat(document.getElementById('ingreso-amount').value); if(!a) return alert('Ingresa el monto'); r.amount = a; logActivity('INGRESO_FIJO', `${c} - ${formatCLP(a)}`); }
             else { const ap = parseFloat(document.getElementById('ingreso-amount-per').value); if(!ap) return alert('Ingresa monto por alumno'); r.amountPer = ap; document.querySelectorAll('#ingreso-students-checks .student-check').forEach(div => { const id = parseInt(div.querySelector('input').value), p = div.querySelector('input').checked, e = div.querySelector('.exempt-toggle').classList.contains('active'); if(p) r.students.push({ id, paid: true, exempt: e }); }); r.amount = ap * r.students.length; logActivity('INGRESO_POR_ALUMNO', `${c} - ${r.students.length} alumnos - ${formatCLP(r.amount)}`); }
             appData.ingresos.push(r); closeModal('modal-ingreso'); saveData();
